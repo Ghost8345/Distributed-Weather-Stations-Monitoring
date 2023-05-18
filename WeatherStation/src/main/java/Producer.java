@@ -1,10 +1,17 @@
 import Models.Station;
 import org.apache.kafka.clients.producer.*;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Scanner;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 public class Producer {
     //Initializing logger
@@ -12,6 +19,7 @@ public class Producer {
     private static final long stationId = 1L;
 
     public static void main(String[] args) throws InterruptedException {
+
 
         // Setting Kafka Producer Properties
         Properties properties = new Properties();
