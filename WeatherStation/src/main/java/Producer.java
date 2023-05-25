@@ -16,10 +16,10 @@ import org.json.simple.parser.JSONParser;
 public class Producer {
     //Initializing logger
     private static final Logger logger = LogManager.getLogger(Producer.class);
-    private static final long stationId = 1L;
+
 
     public static void main(String[] args) throws InterruptedException {
-
+        long stationId = Long.parseLong(args[0]);
 
         // Setting Kafka Producer Properties
         Properties properties = new Properties();
@@ -39,7 +39,7 @@ public class Producer {
             Optional<Station> message = messageFactory.createMessage(stationId);
             if (message.isPresent()){
                 // Create a ProducerRecord
-                ProducerRecord<Long, Station> record = new ProducerRecord<>("quickstart-events",stationId, message.get());
+                ProducerRecord<Long, Station> record = new ProducerRecord<>("station-health-check",stationId, message.get());
 
                 // Send the record
                 producer.send(record, (metadata, exception) -> {

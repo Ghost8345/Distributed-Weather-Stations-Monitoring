@@ -10,9 +10,10 @@ import java.util.Optional;
 import java.util.Scanner;
 
 public class MessageFactory {
-    private Long messageCount = 1L;
+    private Long messageCount = 0L;
 
     public Optional<Station> createMessage(Long stationId){
+        this.messageCount++;
         double dropMessageNumber = Math.random();
         boolean dropped = dropMessageNumber < 0.1;
         if (dropped)
@@ -29,9 +30,7 @@ public class MessageFactory {
 
         Optional<Weather> weather = getWeatherDataFromAPI();
 
-
         Station station = new Station(stationId, messageCount, batteryStatus, System.currentTimeMillis(), weather.orElse(new Weather(35, 100, 13)));
-        this.messageCount++;
         return Optional.of(station);
     }
 
