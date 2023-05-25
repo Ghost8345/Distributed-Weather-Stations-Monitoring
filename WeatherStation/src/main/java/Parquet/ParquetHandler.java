@@ -22,13 +22,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ParquetHandler {
-    public  void parquetTransform(JSONArray weatherEntries) throws IOException, JSONException {
-        createFolder("outputs");
+    static int counter = 0;
+    public  void parquetTransform(JSONArray weatherEntries, String path) throws IOException, JSONException {
+        createFolder(path + "/outputs");
+        counter++;
 
         // Create Station Buffers
         ArrayList<JSONArray> jsonArrayArrayList = new ArrayList<JSONArray>(10);
         for(int i = 0; i < 10; i++){
-            createFolder("outputs/Station_" + i);
+            createFolder(path + "/outputs/Station_" + i);
             jsonArrayArrayList.add(new JSONArray());
         }
 
@@ -39,13 +41,13 @@ public class ParquetHandler {
         }
 
         LocalDate current = java.time.LocalDate.now();
-        Schema schema = new Schema.Parser().parse(new File("src/avro.avsc"));
+        Schema schema = new Schema.Parser().parse(new File("src/main/resources/avro.avsc"));
         //
         for(int i = 0; i < jsonArrayArrayList.size(); i++) {
             if(jsonArrayArrayList.get(i).length() == 0)
                 continue;
             createFolder("outputs/Station_" + i + "/" + current);
-            Path file = new Path("outputs/Station_" + i + "/" + current + "/output_" + i + ".parquet" );
+            Path file = new Path(path + "/outputs/Station_" + i + "/" + current + "/output_" + i + "_" + counter + ".parquet" );
             List<GenericData.Record> files = new ArrayList<>();
             for (int k = 0; k < jsonArrayArrayList.get(i).length(); k++) {
                 JSONObject jsonObject = jsonArrayArrayList.get(i).getJSONObject(k);
