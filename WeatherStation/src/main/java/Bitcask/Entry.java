@@ -16,7 +16,6 @@ public class Entry {
     public Entry(ByteArrayInputStream in) throws IOException {
         readExternal(in);
     }
-    
 
     public byte[] getValue() {
         return value;

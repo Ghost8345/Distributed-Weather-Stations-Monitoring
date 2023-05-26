@@ -1,9 +1,9 @@
 package Bitcask;
 
 public class EntryPointer {
-    private long fileId;
-    private long offset;
-    private int length;
+    private final long fileId;
+    private final long offset;
+    private final int length;
 
     public EntryPointer(long fileId, long offset, int size) {
         this.fileId = fileId;
