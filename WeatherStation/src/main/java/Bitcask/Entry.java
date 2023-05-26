@@ -17,8 +17,16 @@ public class Entry {
         readExternal(in);
     }
 
+    public Entry(RandomAccessFile file) throws IOException {
+        readExternal(file);
+    }
+
     public byte[] getValue() {
         return value;
+    }
+
+    public void setValue(byte[] newValue) {
+        value = newValue;
     }
 
     public int size() { return 2 * Integer.BYTES + key.length() + value.length; }
@@ -28,6 +36,19 @@ public class Entry {
         out.writeInt(value.length);
         out.write(key.getBytes(StandardCharsets.UTF_8));
         out.write(value);
+    }
+
+    private void readExternal(RandomAccessFile file) throws IOException {
+        int keySize = file.readInt();
+        int valueSize = file.readInt();
+
+        byte[] keyBytes = new byte[keySize];
+        file.read(keyBytes);
+        key = new String(keyBytes, 0, keySize, StandardCharsets.UTF_8);
+
+        byte[] valueBytes = new byte[valueSize];
+        file.read(valueBytes);
+        value = valueBytes;
     }
 
     private void readExternal(ByteArrayInputStream buffer) throws IOException {
