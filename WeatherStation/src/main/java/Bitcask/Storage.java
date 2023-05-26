@@ -1,10 +1,13 @@
 package Bitcask;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Storage {
     private final static int MAX_FILE_BYTES = 50;
     private final static int COMPACTION_FILE_LIMIT = 2;
+    private final static int COMPACT_FILE_ID = -1;
     private RandomAccessFile activeFile = null;
     private long fileId = 0;
 
@@ -55,7 +58,23 @@ public class Storage {
         return new Entry(bytesStream);
     }
 
-    private void compact() {
-        int fileId =
+    private void compact() throws IOException {
+        long filesCount = fileId;
+        HashMap<String,EntryPointer> compactBlock = new HashMap<>();
+        for ( int currentId=1 ; currentId<=filesCount ; currentId++){
+            String filePath = getFilePath(currentId);
+            RandomAccessFile file = new RandomAccessFile(filePath, "r");
+            while (file.getFilePointer()<file.length()) {
+                long offset = file.getFilePointer();
+                Entry e = new Entry(file);
+                EntryPointer ep = new EntryPointer(COMPACT_FILE_ID,offset,e.size());
+                if (compactBlock.containsKey(e.getKey())){
+                    compactBlock.replace(e.getKey(),ep);
+                }else{
+                    compactBlock.put(e.getKey(),ep);
+                }
+                file.seek(file.getFilePointer() + e.size());
+            }
+        }
     }
 }
