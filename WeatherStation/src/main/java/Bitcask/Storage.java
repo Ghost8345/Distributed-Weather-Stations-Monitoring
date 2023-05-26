@@ -7,9 +7,10 @@ import java.util.HashMap;
 public class Storage {
     private final static int MAX_FILE_BYTES = 50;
     private final static int COMPACTION_FILE_LIMIT = 2;
-    private final static int COMPACT_FILE_ID = -1;
+    private final static int COMPACT_FILE_ID = 0;
     private RandomAccessFile activeFile = null;
     private long fileId = 0;
+    private boolean hasCompactedBefore = false;
 
     public Storage() throws IOException {
         openNewFile();
@@ -61,8 +62,9 @@ public class Storage {
     private void compact() throws IOException {
         long filesCount = fileId;
         HashMap<String,CompactValueNode> compactBlock = new HashMap<>();
-        for ( int currentId=1 ; currentId<=filesCount ; currentId++){
-            String filePath = getFilePath(currentId);
+        int currentId = hasCompactedBefore ? 0 : 1;
+        while (currentId<=filesCount){
+            String filePath = getFilePath(currentId++);
             RandomAccessFile file = new RandomAccessFile(filePath, "r");
             while (file.getFilePointer()<file.length()) {
                 long offset = file.getFilePointer();
@@ -75,5 +77,10 @@ public class Storage {
                 }
             }
         }
+        writeCompaction();
+    }
+
+    private void writeCompaction() {
+        
     }
 }
