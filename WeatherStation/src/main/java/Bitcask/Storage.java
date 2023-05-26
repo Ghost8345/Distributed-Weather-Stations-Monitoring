@@ -73,7 +73,6 @@ public class Storage {
                 }else{
                     compactBlock.put(e.getKey(),ep);
                 }
-                file.seek(file.getFilePointer() + e.size());
             }
         }
     }
