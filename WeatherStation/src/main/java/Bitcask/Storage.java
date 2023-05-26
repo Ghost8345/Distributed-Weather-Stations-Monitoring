@@ -20,7 +20,7 @@ public class Storage {
     private void openNewFile() throws IOException {
         if (activeFile != null)
             activeFile.close();
-        if (fileId>=2)
+        if (fileId>=COMPACTION_FILE_LIMIT)
             compact();
         String filePath = getFilePath(++fileId);
         activeFile = new RandomAccessFile(filePath, "rwd");
@@ -56,6 +56,6 @@ public class Storage {
     }
 
     private void compact() {
-
+        int fileId =
     }
 }
