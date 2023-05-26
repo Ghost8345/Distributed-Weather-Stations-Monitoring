@@ -4,6 +4,7 @@ import java.io.*;
 
 public class Storage {
     private final static int MAX_FILE_BYTES = 50;
+    private final static int COMPACTION_FILE_LIMIT = 2;
     private RandomAccessFile activeFile = null;
     private long fileId = 0;
 
@@ -19,7 +20,8 @@ public class Storage {
     private void openNewFile() throws IOException {
         if (activeFile != null)
             activeFile.close();
-
+        if (fileId>=2)
+            compact();
         String filePath = getFilePath(++fileId);
         activeFile = new RandomAccessFile(filePath, "rwd");
     }
@@ -51,5 +53,9 @@ public class Storage {
 
         ByteArrayInputStream bytesStream = new ByteArrayInputStream(buffer);
         return new Entry(bytesStream);
+    }
+
+    private void compact() {
+
     }
 }

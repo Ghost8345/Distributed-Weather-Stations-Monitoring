@@ -37,4 +37,6 @@ public class Bitcask {
         Entry entry = storage.read(pointer);
         return entry.getValue();
     }
+
+
 }
