@@ -16,10 +16,7 @@ public class Entry {
     public Entry(ByteArrayInputStream in) throws IOException {
         readExternal(in);
     }
-
-    public String getKey() {
-        return key;
-    }
+    
 
     public byte[] getValue() {
         return value;
