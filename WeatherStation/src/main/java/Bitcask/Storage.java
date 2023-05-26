@@ -60,7 +60,7 @@ public class Storage {
 
     private void compact() throws IOException {
         long filesCount = fileId;
-        HashMap<String,EntryPointer> compactBlock = new HashMap<>();
+        HashMap<String,CompactValueNode> compactBlock = new HashMap<>();
         for ( int currentId=1 ; currentId<=filesCount ; currentId++){
             String filePath = getFilePath(currentId);
             RandomAccessFile file = new RandomAccessFile(filePath, "r");
@@ -69,9 +69,9 @@ public class Storage {
                 Entry e = new Entry(file);
                 EntryPointer ep = new EntryPointer(COMPACT_FILE_ID,offset,e.size());
                 if (compactBlock.containsKey(e.getKey())){
-                    compactBlock.replace(e.getKey(),ep);
+                    compactBlock.replace(e.getKey(),new CompactValueNode(e,ep));
                 }else{
-                    compactBlock.put(e.getKey(),ep);
+                    compactBlock.put(e.getKey(),new CompactValueNode(e,ep));
                 }
             }
         }
