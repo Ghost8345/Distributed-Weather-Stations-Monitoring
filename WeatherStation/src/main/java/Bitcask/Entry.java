@@ -25,6 +25,10 @@ public class Entry {
         return value;
     }
 
+    public String getKey() {
+        return key;
+    }
+
     public void setValue(byte[] newValue) {
         value = newValue;
     }
