@@ -1,6 +1,7 @@
 package Bitcask;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,7 +11,6 @@ public class Storage {
     private final static int COMPACT_FILE_ID = 0;
     private RandomAccessFile activeFile = null;
     private long fileId = 0;
-    private boolean hasCompactedBefore = false;
 
     public Storage() throws IOException {
         openNewFile();
@@ -66,14 +66,14 @@ public class Storage {
     private void compact() throws IOException {
         long filesCount = fileId;
         HashMap<String,CompactValueNode> compactData = new HashMap<>();
-        int currentId = hasCompactedBefore ? 0 : 1;
+        File compactFile = new File(getFilePath(COMPACT_FILE_ID));
+        int currentId = compactFile.exists() ? 0 : 1;
         while (currentId<=filesCount){
             String filePath = getFilePath(currentId++);
             RandomAccessFile file = new RandomAccessFile(filePath, "r");
             while (file.getFilePointer()<file.length()) {
-                long offset = file.getFilePointer();
                 Entry e = new Entry(file);
-                EntryPointer ep = new EntryPointer(COMPACT_FILE_ID,offset,e.size());
+                EntryPointer ep = new EntryPointer(COMPACT_FILE_ID,-1,e.size());
                 if (compactData.containsKey(e.getKey())){
                     compactData.replace(e.getKey(),new CompactValueNode(e,ep));
                 }else{
@@ -84,7 +84,7 @@ public class Storage {
         writeCompactionData(compactData);
     }
 
-    private void writeCompactionData(HashMap<String,CompactValueNode> compactData) throws FileNotFoundException {
+    private void writeCompactionData(HashMap<String,CompactValueNode> compactData) throws IOException {
         String compactFilePath = getFilePath(COMPACT_FILE_ID);
         RandomAccessFile compactFile = new RandomAccessFile(compactFilePath, "rwd");
 
@@ -94,17 +94,23 @@ public class Storage {
         for (Map.Entry<String, CompactValueNode> compactPair : compactData.entrySet()) {
             String key = compactPair.getKey();
             CompactValueNode value = compactPair.getValue();
-            writeHintEntry(key,value.getEntryPointer(),hintFile);
-            writeCompactEntry(key,value.getEntry(),compactFile);
+            EntryPointer entryPointer = value.getEntryPointer();
+            entryPointer.setOffset(compactFile.getFilePointer());
+
+            value.getEntry().writeExternal(compactFile);
+
+            writeHintEntry(key,entryPointer,hintFile);
         }
 
     }
 
-    private void writeHintEntry(String key, EntryPointer entryPointer, RandomAccessFile hintFile) {
+    private void writeHintEntry(String key,
+                                EntryPointer entryPointer,
+                                RandomAccessFile hintFile) throws IOException {
+        int keySize = key.length();
+        hintFile.writeInt(keySize);
+        hintFile.write(key.getBytes(StandardCharsets.UTF_8));
+        entryPointer.serialize(hintFile);
     }
-
-    private void writeCompactEntry(String key, Entry entry, RandomAccessFile compactFile) {
-    }
-
 
 }
