@@ -13,7 +13,7 @@ public class Storage {
     private final static int COMPACT_FILE_ID = 0;
     private RandomAccessFile activeFile = null;
     private long fileId = 0;
-    private ExecutorService compactionThread;
+    private final ExecutorService compactionThread;
 
     public Storage() throws IOException {
         openNewFile();
