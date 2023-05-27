@@ -1,17 +1,11 @@
 import Models.Station;
 import org.apache.kafka.clients.producer.*;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Scanner;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 public class Producer {
     //Initializing logger
@@ -23,9 +17,9 @@ public class Producer {
 
         // Setting Kafka Producer Properties
         Properties properties = new Properties();
-        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.LongSerializer");
-        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "JsonSerializer");
+        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "Json.JsonSerializer");
 
         // Create the Kafka producer
         KafkaProducer<Long, Station> producer = new KafkaProducer<>(properties);

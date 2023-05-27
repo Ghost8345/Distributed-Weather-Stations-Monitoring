@@ -1,7 +1,7 @@
 package Models;
 
 public class Station {
-    private final Long  station_id;
+    private final Long station_id;
     private final Long s_no;
     private final String battery_status;
     private final Long status_timestamp;
@@ -31,7 +31,7 @@ public class Station {
         return status_timestamp;
     }
 
-    public Weather getWeatherModel() {
+    public Weather getWeather() {
         return weather;
     }
 

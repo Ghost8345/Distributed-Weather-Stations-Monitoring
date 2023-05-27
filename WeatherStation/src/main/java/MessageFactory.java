@@ -30,13 +30,13 @@ public class MessageFactory {
 
         Optional<Weather> weather = getWeatherDataFromAPI();
 
-        Station station = new Station(stationId, messageCount, batteryStatus, System.currentTimeMillis(), weather.orElse(new Weather(35, 100, 13)));
+        Station station = new Station(stationId, messageCount, batteryStatus, System.currentTimeMillis(), weather.orElse(new Weather(75, 100, 13)));
         return Optional.of(station);
     }
 
     private Optional<Weather> getWeatherDataFromAPI(){
         try{
-            URL url = new URL("https://api.open-meteo.com/v1/forecast?latitude=31.20&longitude=29.92&temperature_unit=fahrenheit&current_weather=true&hourly=relativehumidity_2m");
+            URL url = new URL("https://aapi.open-meteo.com/v1/forecast?latitude=31.20&longitude=29.92&temperature_unit=fahrenheit&current_weather=true&hourly=relativehumidity_2m");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             conn.connect();
@@ -72,7 +72,7 @@ public class MessageFactory {
             }
         }
         catch (Exception e){
-            e.printStackTrace();
+            System.out.println("Couldn't Connect to API");
             return Optional.empty();
         }
 
