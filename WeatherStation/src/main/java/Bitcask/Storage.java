@@ -1,31 +1,46 @@
 package Bitcask;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Storage {
     private final static int MAX_FILE_BYTES = 50;
+    private final static int COMPACTION_FILE_LIMIT = 2;
+    private final static int COMPACT_FILE_ID = 0;
     private RandomAccessFile activeFile = null;
     private long fileId = 0;
+    private ExecutorService compactionThread;
 
     public Storage() throws IOException {
         openNewFile();
+        compactionThread = Executors.newSingleThreadExecutor();
     }
 
     public Storage(long fileId) throws IOException {
         this.fileId = fileId;
         openNewFile();
+        compactionThread = Executors.newSingleThreadExecutor();
     }
 
     private void openNewFile() throws IOException {
         if (activeFile != null)
             activeFile.close();
-
+        if (fileId>=COMPACTION_FILE_LIMIT)
+            compact();
         String filePath = getFilePath(++fileId);
         activeFile = new RandomAccessFile(filePath, "rwd");
     }
 
     private String getFilePath(long fileId) {
         return "storage/" + fileId;
+    }
+
+    private String getFilePath(String fileName) {
+        return "storage/" + fileName;
     }
 
     public EntryPointer write(Entry entry) throws IOException {
@@ -52,4 +67,62 @@ public class Storage {
         ByteArrayInputStream bytesStream = new ByteArrayInputStream(buffer);
         return new Entry(bytesStream);
     }
+
+    private void compact() {
+        compactionThread.execute(() -> {
+            try {
+                long filesCount = fileId;
+                HashMap<String, CompactValueNode> compactData = new HashMap<>();
+                File compactFile = new File(getFilePath(COMPACT_FILE_ID));
+                int currentId = compactFile.exists() ? 0 : 1;
+                while (currentId <= filesCount) {
+                    String filePath = getFilePath(currentId++);
+                    RandomAccessFile file = new RandomAccessFile(filePath, "r");
+                    while (file.getFilePointer() < file.length()) {
+                        Entry e = new Entry(file);
+                        EntryPointer ep = new EntryPointer(COMPACT_FILE_ID, -1, e.size());
+                        if (compactData.containsKey(e.getKey())) {
+                            compactData.replace(e.getKey(), new CompactValueNode(e, ep));
+                        } else {
+                            compactData.put(e.getKey(), new CompactValueNode(e, ep));
+                        }
+                    }
+                }
+                writeCompactionData(compactData);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+
+    private void writeCompactionData(HashMap<String,CompactValueNode> compactData) throws IOException {
+        String compactFilePath = getFilePath(COMPACT_FILE_ID);
+        RandomAccessFile compactFile = new RandomAccessFile(compactFilePath, "rwd");
+
+        String hintFilePath = getFilePath("hint");
+        RandomAccessFile hintFile = new RandomAccessFile(hintFilePath, "rwd");
+
+        for (Map.Entry<String, CompactValueNode> compactPair : compactData.entrySet()) {
+            String key = compactPair.getKey();
+            CompactValueNode value = compactPair.getValue();
+            EntryPointer entryPointer = value.getEntryPointer();
+            entryPointer.setOffset(compactFile.getFilePointer());
+
+            value.getEntry().writeExternal(compactFile);
+
+            writeHintEntry(key,entryPointer,hintFile);
+        }
+
+    }
+
+    private void writeHintEntry(String key,
+                                EntryPointer entryPointer,
+                                RandomAccessFile hintFile) throws IOException {
+        int keySize = key.length();
+        hintFile.writeInt(keySize);
+        hintFile.write(key.getBytes(StandardCharsets.UTF_8));
+        entryPointer.serialize(hintFile);
+    }
+
 }

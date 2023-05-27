@@ -1,5 +1,8 @@
 package Bitcask;
 
+import java.io.IOException;
+import java.io.RandomAccessFile;
+
 public class EntryPointer {
     private long fileId;
     private long offset;
@@ -9,6 +12,10 @@ public class EntryPointer {
         this.fileId = fileId;
         this.offset = offset;
         this.length = size;
+    }
+
+    public EntryPointer(RandomAccessFile in) throws IOException {
+        read(in);
     }
 
     @Override
@@ -31,4 +38,21 @@ public class EntryPointer {
     public int getLength() {
         return length;
     }
+
+    public void serialize(RandomAccessFile out) throws IOException {
+        out.writeLong(fileId);
+        out.writeLong(offset);
+        out.writeInt(length);
+    }
+
+    private void read(RandomAccessFile in) throws IOException {
+        fileId = in.readLong();
+        offset = in.readLong();
+        length = in.readInt();
+    }
+
+    public void setOffset(long offset) {
+        this.offset = offset;
+    }
+
 }
