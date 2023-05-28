@@ -18,7 +18,7 @@ public class HumidityProcessor {
     public static void main(String[] args) {
         Properties props = new Properties();
         props.putIfAbsent(StreamsConfig.APPLICATION_ID_CONFIG, "streams-pipe");
-        props.putIfAbsent(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.putIfAbsent(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka-service:9092");
         props.putIfAbsent(StreamsConfig.STATESTORE_CACHE_MAX_BYTES_CONFIG, 0);
 
         final StreamsBuilder builder = new StreamsBuilder();
