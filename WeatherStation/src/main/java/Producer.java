@@ -17,7 +17,7 @@ public class Producer {
 
         // Setting Kafka Producer Properties
         Properties properties = new Properties();
-        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092");
+        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka-service:9092");
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.LongSerializer");
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "Json.JsonSerializer");
 

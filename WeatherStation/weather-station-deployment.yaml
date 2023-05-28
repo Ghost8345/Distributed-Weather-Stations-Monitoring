@@ -1,0 +1,21 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: weather-station-deployment
+  labels:
+    app: weather-station
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-station
+  template:
+    metadata:
+      labels:
+        app: weather-station
+    spec:
+      containers:
+      - name: weather-station
+        image: weather-station
+      	args: ["1"]
+        
