@@ -12,7 +12,8 @@ public class Storage {
     private final static int COMPACTION_FILE_LIMIT = 2;
     private final static int COMPACT_FILE_ID = 0;
     private RandomAccessFile activeFile = null;
-    private long fileId = 0;
+    private long activeFileId;
+    private int nonCompactedFiles = 0;
     private final ExecutorService compactionThread;
 
     public Storage() throws IOException {
@@ -21,18 +22,24 @@ public class Storage {
     }
 
     public Storage(long fileId) throws IOException {
-        this.fileId = fileId;
+        this.activeFileId = fileId;
         openNewFile();
         compactionThread = Executors.newSingleThreadExecutor();
     }
 
     private void openNewFile() throws IOException {
-        if (activeFile != null)
+        if (activeFile != null) {
+            nonCompactedFiles++;
             activeFile.close();
-        if (fileId>=COMPACTION_FILE_LIMIT)
+        }
+
+        if (nonCompactedFiles >= COMPACTION_FILE_LIMIT)
             compact();
-        String filePath = getFilePath(++fileId);
+
+        activeFileId = System.currentTimeMillis(); // generate unique id
+        String filePath = getFilePath(activeFileId);
         activeFile = new RandomAccessFile(filePath, "rwd");
+
     }
 
     private String getFilePath(long fileId) {
@@ -50,7 +57,7 @@ public class Storage {
         long offset = activeFile.getFilePointer();
         entry.writeExternal(activeFile);
         int length = (int) (activeFile.getFilePointer() - offset);
-        return new EntryPointer(fileId, offset, length);
+        return new EntryPointer(activeFileId, offset, length);
     }
 
     public Entry read(EntryPointer entryPointer) throws IOException {
@@ -71,7 +78,7 @@ public class Storage {
     private void compact() {
         compactionThread.execute(() -> {
             try {
-                long filesCount = fileId;
+                long filesCount = activeFileId;
                 HashMap<String, Entry> compactData = new HashMap<>();
                 File compactFile = new File(getFilePath(COMPACT_FILE_ID));
                 int currentId = compactFile.exists() ? 0 : 1;
