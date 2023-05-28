@@ -33,7 +33,7 @@ public class CentralStation {
                     Long key = record.key();
                     String value = record.value();
                     System.out.println("Received message: Key = " + key + ", Value = " + value);
-//                    buffer.add(value);
+                    buffer.add(value);
                     bitcask.put(key.toString(), value.getBytes(StandardCharsets.UTF_8));
                     String message = new String(bitcask.get(key.toString()));
                     System.out.println("Bitcask: " + message);

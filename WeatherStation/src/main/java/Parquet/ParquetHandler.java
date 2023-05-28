@@ -30,7 +30,7 @@ public class ParquetHandler {
 
         // Create Station Buffers
         ArrayList<JSONArray> jsonArrayArrayList = new ArrayList<JSONArray>(10);
-        for(int i = 0; i < 10; i++){
+        for(int i = 1; i < 11; i++){
             createFolder(path + "/outputs/Station_" + i);
             jsonArrayArrayList.add(new JSONArray());
         }
@@ -38,7 +38,7 @@ public class ParquetHandler {
         // Partitioning
         for(int i = 0; i < weatherEntries.length(); i++){
             int k = (int) weatherEntries.getJSONObject(i).get("station_id");
-            jsonArrayArrayList.get(i).put(weatherEntries.getJSONObject(i));
+            jsonArrayArrayList.get(k).put(weatherEntries.getJSONObject(i));
         }
 
         LocalDate current = java.time.LocalDate.now();
@@ -47,7 +47,7 @@ public class ParquetHandler {
         for(int i = 0; i < jsonArrayArrayList.size(); i++) {
             if(jsonArrayArrayList.get(i).length() == 0)
                 continue;
-            createFolder("outputs/Station_" + i + "/" + current);
+            createFolder(path + "/outputs/Station_" + i + "/" + current);
             Path file = new Path(path + "/outputs/Station_" + i + "/" + current + "/output_" + i + "_" + counter + ".parquet" );
             List<GenericData.Record> files = new ArrayList<>();
             for (int k = 0; k < jsonArrayArrayList.get(i).length(); k++) {
