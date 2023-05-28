@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-station-deployment
+  labels:
+    app: weather-station
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-station
+  template:
+    metadata:
+      labels:
+        app: weather-station
+    spec:
+      containers:
+      - name: weather-station-1
+        image: weather-station
+        imagePullPolicy: Never
+        args: ["1"]
+      - name: weather-station-2
+        image: weather-station
+        imagePullPolicy: Never
+        args: ["2"]
+      # - name: weather-station-3
+      #   image: weather-station
+      #   imagePullPolicy: Never
+      #   args: ["3"]
+      # - name: weather-station-4
+      #   image: weather-station
+      #   imagePullPolicy: Never
+      #   args: ["4"]
+      # - name: weather-station-5
+      #   image: weather-station
+      #   imagePullPolicy: Never
+      #   args: ["5"]
+      # - name: weather-station-6
+      #   image: weather-station
+      #   imagePullPolicy: Never
+      #   args: ["6"]
+      # - name: weather-station-7
+      #   image: weather-station
+      #   imagePullPolicy: Never
+      #   args: ["7"]
+      # - name: weather-station-8
+      #   image: weather-station
+      #   imagePullPolicy: Never
+      #   args: ["8"]
+      # - name: weather-station-9
+      #   image: weather-station
+      #   imagePullPolicy: Never
+      #   args: ["9"]
+      # - name: weather-station-10
+      #   image: weather-station
+      #   imagePullPolicy: Never
+      #   args: ["10"]

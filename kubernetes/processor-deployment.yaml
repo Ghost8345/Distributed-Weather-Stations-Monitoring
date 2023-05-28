@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: humidity-processor-deployment
+  labels:
+    app: humidity-processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: humidity-processor
+  template:
+    metadata:
+      labels:
+        app: humidity-processor
+    spec:
+      containers:
+      - name: humidity-processor
+        image: humidity-processor
+        imagePullPolicy: Never
