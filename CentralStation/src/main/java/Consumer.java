@@ -14,7 +14,7 @@ import java.util.Properties;
 public class Consumer {
     public static void main(String[] args) throws JSONException, IOException {
         Properties properties = new Properties();
-        properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka-service:9092");
         properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "central-station");
         properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.LongDeserializer");
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
@@ -24,7 +24,8 @@ public class Consumer {
 
         Buffer buffer = new Buffer();
         Bitcask bitcask = new Bitcask();
-         while (true) {
+
+        while (true) {
             ConsumerRecords<Long, String> records = consumer.poll(Duration.ofMillis(100));
 
             for (ConsumerRecord<Long, String> record : records) {
@@ -33,8 +34,6 @@ public class Consumer {
                 System.out.println("Received message: Key = " + key + ", Value = " + value);
                 buffer.add(value);
                 bitcask.put(key.toString(), value.getBytes(StandardCharsets.UTF_8));
-                String message = new String(bitcask.get(key.toString()));
-                System.out.println("Bitcask: " + message);
             }
         }
     }

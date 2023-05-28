@@ -17,7 +17,7 @@ public class Buffer {
 
     public void add(String jsonString) throws JSONException, IOException {
         if (array.length() == MAX_LENGTH) {
-            parquetHandler.write(array, "./parquet");
+            parquetHandler.write(array, "./storage");
             array = new JSONArray();
         }
 

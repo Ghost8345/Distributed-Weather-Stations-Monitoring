@@ -8,9 +8,10 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class Bitcask {
-    private final static String HINT_PATH = "storage/hint";
-    private final static int MAX_FILE_BYTES = 50;
-    private final static int COMPACTION_FILE_LIMIT = 2;
+    private final static String PATH = "storage/bitcask/";
+    private final static String HINT_PATH = PATH + "hint";
+    private final static int MAX_FILE_BYTES = 1000;
+    private final static int COMPACTION_FILE_LIMIT = 3;
     private final Map<String, EntryPointer> map;
     private final ExecutorService compactionThread;
     private RandomAccessFile activeFile = null;
@@ -45,7 +46,7 @@ public class Bitcask {
     }
 
     private void recoverFromRecentlyActive() throws IOException {
-        File directory = new File("storage");
+        File directory = new File(PATH);
         List<File> postCompactionFiles = Arrays.stream(Objects.requireNonNull(
                         directory
                 .listFiles((file) -> !isHintFile(file))))
@@ -55,7 +56,6 @@ public class Bitcask {
                     return list;
                 }));
         for (File file : postCompactionFiles) {
-            System.out.println("Reading " + file.getName());
             RandomAccessFile f = new RandomAccessFile(file, "r");
             while (f.getFilePointer() < f.length() - 1) {
                 long offset = f.getFilePointer();
@@ -102,7 +102,7 @@ public class Bitcask {
 
 
     private void createDirectory() throws IOException {
-        File directory = new File("storage");
+        File directory = new File(PATH);
         if (!directory.exists() || !directory.isDirectory()) {
             boolean created = directory.mkdir();
             if (!created)
@@ -131,7 +131,7 @@ public class Bitcask {
     }
 
     private String getFilePath(long fileId) {
-        return "storage/" + fileId;
+        return PATH + fileId;
     }
 
     public EntryPointer write(Entry entry) throws IOException {
@@ -164,7 +164,7 @@ public class Bitcask {
         compactionThread.execute(() -> {
             try {
                 long activeFileId = this.activeFileId;
-                File directory = new File("storage");
+                File directory = new File(PATH);
                 List<File> immutableFiles = Arrays.stream(Objects.requireNonNull(
                     directory
                         .listFiles((file) -> !isActiveFile(file, activeFileId) && !isHintFile(file))))
@@ -173,7 +173,6 @@ public class Bitcask {
 
                 HashMap<String, CompactValueNode> compactData = new HashMap<>();
                 for (File file : immutableFiles) {
-                    System.out.println("Reading " + file.getName());
                     RandomAccessFile f = new RandomAccessFile(file, "rwd");
                     while (f.getFilePointer() < f.length() - 1) {
                         long offset = f.getFilePointer();
@@ -197,8 +196,6 @@ public class Bitcask {
                         } catch (GarbageFileNotDeleted e) {
                             e.printStackTrace();
                         }
-                    else
-                        System.out.println(file.getName() + "deleted successfully");
                 });
 
                 System.out.println("Compaction done and hint file generated");

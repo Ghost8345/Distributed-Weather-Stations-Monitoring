@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central-station-deployment
+  labels:
+    app: central-station
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: central-station
+  template:
+    metadata:
+      labels:
+        app: central-station
+    spec:
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: central-station-claim
+      containers:
+      - name: central-station
+        image: central-station
+        imagePullPolicy: Never
+        ports:
+          - containerPort: 8080
+        volumeMounts:
+          - name: data-volume
+            mountPath: /storage

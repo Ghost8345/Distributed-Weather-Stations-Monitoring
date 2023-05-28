@@ -40,7 +40,7 @@ public class ParquetHandler {
         }
 
         LocalDate current = LocalDate.now();
-        Schema schema = new Schema.Parser().parse(new File("src/main/resources/avro.avsc"));
+        Schema schema = new Schema.Parser().parse(new File("avro.avsc"));
         //
         for(int i = 0; i < jsonArrayArrayList.size(); i++) {
             if(jsonArrayArrayList.get(i).length() == 0)
