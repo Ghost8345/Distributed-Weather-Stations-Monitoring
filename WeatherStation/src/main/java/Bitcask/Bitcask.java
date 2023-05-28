@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 public class Bitcask {
     private final static String HINT_PATH = "storage/hint";
-    private final static int MAX_FILE_BYTES = 300;
+    private final static int MAX_FILE_BYTES = 50;
     private final static int COMPACTION_FILE_LIMIT = 2;
     private final Map<String, EntryPointer> map;
     private final ExecutorService compactionThread;
@@ -74,10 +74,16 @@ public class Bitcask {
             nonCompactedFiles++;
         }
 
-        if (nonCompactedFiles >= COMPACTION_FILE_LIMIT)
-            compact();
+        long compactionFileId = 0;
+        if (nonCompactedFiles >= COMPACTION_FILE_LIMIT) {
+            compactionFileId = System.currentTimeMillis();
+            compact(compactionFileId);
+            nonCompactedFiles = 0;
+        }
 
         activeFileId = System.currentTimeMillis(); // generate unique id
+        if (activeFileId == compactionFileId)
+            activeFileId++;
         activeFile = new RandomAccessFile(getFilePath(activeFileId), "rwd");
     }
 
@@ -114,18 +120,16 @@ public class Bitcask {
         return new Entry(bytesStream);
     }
 
-    private void compact() {
+    private void compact(long compactionFileId) {
         compactionThread.execute(() -> {
             try {
                 long activeFileId = this.activeFileId;
                 File directory = new File("storage");
                 List<File> immutableFiles = Arrays.stream(Objects.requireNonNull(
-                                directory
-                                        .listFiles((file) -> !isActiveFile(file, activeFileId) && !isHintFile(file))))
+                    directory
+                        .listFiles((file) -> !isActiveFile(file, activeFileId) && !isHintFile(file))))
                         .sorted(Comparator.comparing(File::getName))
                         .collect(Collectors.toList());
-
-                immutableFiles.forEach((file) -> System.out.println(file.getName()));
 
                 HashMap<String, CompactValueNode> compactData = new HashMap<>();
                 for (File file : immutableFiles) {
@@ -141,14 +145,11 @@ public class Bitcask {
                 }
 
                 // Write compacted file
-                writeCompactionData(compactData);
+                writeCompactionData(compactData, compactionFileId);
 
                 // Delete garbage files
-                immutableFiles
-                        .forEach(file -> {
-                            System.out.println("Deleting file " + file.getName());
-                            file.delete();
-                        });
+                immutableFiles.forEach(file -> file.delete());
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -163,9 +164,8 @@ public class Bitcask {
         return file.getName().equals(String.valueOf(activeFileId));
     }
 
-    private void writeCompactionData(HashMap<String, CompactValueNode> compactData) throws IOException {
-        long compactFileId = generateCompactionId();
-        String compactFilePath = getFilePath(compactFileId);
+    private void writeCompactionData(HashMap<String, CompactValueNode> compactData, long compactionFileId) throws IOException {
+        String compactFilePath = getFilePath(compactionFileId);
         RandomAccessFile compactFile = new RandomAccessFile(compactFilePath, "rwd");
 
         // TODO: DELETE BEFORE WRITING
@@ -180,7 +180,7 @@ public class Bitcask {
             int size = entry.size();
 
             EntryPointer nonCompactedPointer = compactPair.getValue().getEntryPointer();
-            EntryPointer compactedPointer = new EntryPointer(compactFileId, offset, size);
+            EntryPointer compactedPointer = new EntryPointer(compactionFileId, offset, size);
 
             entry.writeExternal(compactFile);
             writeHintEntry(key, compactedPointer, hintFile);
@@ -201,14 +201,6 @@ public class Bitcask {
         hintFile.writeInt(keySize);
         hintFile.write(key.getBytes(StandardCharsets.UTF_8));
         entryPointer.serialize(hintFile);
-    }
-
-    private long generateCompactionId() {
-        long compactFileId = System.currentTimeMillis();
-        // make sure it doesn't match the active file id
-        while (compactFileId == activeFileId)
-            compactFileId = System.currentTimeMillis();
-        return compactFileId;
     }
 
 }
