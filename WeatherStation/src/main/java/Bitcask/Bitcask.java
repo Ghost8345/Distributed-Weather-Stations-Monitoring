@@ -58,11 +58,12 @@ public class Bitcask {
             System.out.println("Reading " + file.getName());
             RandomAccessFile f = new RandomAccessFile(file, "r");
             while (f.getFilePointer() < f.length() - 1) {
+                long offset = f.getFilePointer();
+
                 Entry e = new Entry(f);
                 String key = e.getKey();
 
                 long id = Long.parseLong(file.getName());
-                long offset = f.getFilePointer();
                 int size = e.size();
 
                 EntryPointer entryPointer = new EntryPointer(id, offset, size);
@@ -83,13 +84,18 @@ public class Bitcask {
         }
     }
 
-    public byte[] get(String key) throws EntryNotFoundException, IOException {
-        if (!map.containsKey(key))
-            throw new EntryNotFoundException("No items with the given key");
+    public byte[] get(String key) throws  IOException {
+        try{
+            if (!map.containsKey(key))
+                throw new EntryNotFoundException("No items with the given key");
 
-        EntryPointer pointer = map.get(key);
-        Entry entry = read(pointer);
-        return entry.getValue();
+            EntryPointer pointer = map.get(key);
+            Entry entry = read(pointer);
+            return entry.getValue();
+        }catch (EntryNotFoundException e){
+            System.out.println(e.getMessage());
+        }
+        return null;
     }
 
 
