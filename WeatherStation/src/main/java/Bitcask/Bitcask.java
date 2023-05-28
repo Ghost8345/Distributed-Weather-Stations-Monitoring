@@ -17,15 +17,60 @@ public class Bitcask {
     private long activeFileId = 0;
     private int nonCompactedFiles = 0;
 
+
     public Bitcask() throws IOException {
         this.map = new HashMap<>();
         createDirectory();
 
         File hintFile = new File(HINT_PATH);
-        if (hintFile.exists())
+        if (hintFile.exists()) {
             recoverFromHint();
+            recoverFromRecentlyActive();
+        }
         openNewFile();
         compactionThread = Executors.newSingleThreadExecutor();
+    }
+
+    private void recoverFromHint() throws IOException {
+        System.out.println("Reading hint file");
+        RandomAccessFile hintFile = new RandomAccessFile(HINT_PATH,"r");
+        while (hintFile.getFilePointer() < hintFile.length()){
+            int keySize = hintFile.readInt();
+            byte[] keyBytes = new byte[keySize];
+            hintFile.read(keyBytes);
+            String key = new String(keyBytes, 0, keySize, StandardCharsets.UTF_8);
+            EntryPointer entryPointer = new EntryPointer(hintFile);
+            map.put(key,entryPointer);
+        }
+    }
+
+    private void recoverFromRecentlyActive() throws IOException {
+        File directory = new File("storage");
+        List<File> postCompactionFiles = Arrays.stream(Objects.requireNonNull(
+                        directory
+                .listFiles((file) -> !isHintFile(file))))
+                .sorted(Comparator.comparing(File::getName))
+                .collect(Collectors.collectingAndThen(Collectors.toList(), list -> {
+                    if (!list.isEmpty()) list.subList(0, 1).clear();
+                    return list;
+                }));
+        for (File file : postCompactionFiles) {
+            System.out.println("Reading " + file.getName());
+            RandomAccessFile f = new RandomAccessFile(file, "r");
+            while (f.getFilePointer() < f.length() - 1) {
+                Entry e = new Entry(f);
+                String key = e.getKey();
+
+                long id = Long.parseLong(file.getName());
+                long offset = f.getFilePointer();
+                int size = e.size();
+
+                EntryPointer entryPointer = new EntryPointer(id, offset, size);
+                map.put(key,entryPointer);
+            }
+            f.close();
+        }
+
     }
 
     public void put(String key, byte[] value) throws IOException {
@@ -48,17 +93,7 @@ public class Bitcask {
     }
 
 
-    private void recoverFromHint() throws IOException {
-        RandomAccessFile hintFile = new RandomAccessFile(HINT_PATH,"r");
-        while (hintFile.getFilePointer() < hintFile.length()){
-            int keySize = hintFile.readInt();
-            byte[] keyBytes = new byte[keySize];
-            hintFile.read(keyBytes);
-            String key = new String(keyBytes, 0, keySize, StandardCharsets.UTF_8);
-            EntryPointer entryPointer = new EntryPointer(hintFile);
-            map.put(key,entryPointer);
-        }
-    }
+
 
     private void createDirectory() throws IOException {
         File directory = new File("storage");
@@ -92,10 +127,6 @@ public class Bitcask {
         return "storage/" + fileId;
     }
 
-    private String getFilePath(String fileName) {
-        return "storage/" + fileName;
-    }
-
     public EntryPointer write(Entry entry) throws IOException {
         if (activeFile.getFilePointer() + entry.size() > MAX_FILE_BYTES)
             openNewFile();
@@ -122,7 +153,7 @@ public class Bitcask {
     }
 
     private void compact(long compactionFileId) {
-        System.out.println("Compaction Thread Up.");
+        System.out.println("Compaction Thread Up");
         compactionThread.execute(() -> {
             try {
                 long activeFileId = this.activeFileId;
@@ -175,9 +206,10 @@ public class Bitcask {
         String compactFilePath = getFilePath(compactionFileId);
         RandomAccessFile compactFile = new RandomAccessFile(compactFilePath, "rwd");
 
-        // TODO: DELETE BEFORE WRITING
-        String hintFilePath = getFilePath("hint");
-        RandomAccessFile hintFile = new RandomAccessFile(hintFilePath, "rwd");
+
+        RandomAccessFile hintFile = new RandomAccessFile(HINT_PATH, "rwd");
+        //Clear hint file
+        hintFile.setLength(0);
 
         for (var compactPair : compactData.entrySet()) {
             String key = compactPair.getKey();
