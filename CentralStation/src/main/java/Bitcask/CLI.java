@@ -13,7 +13,7 @@ public class CLI {
         System.out.println("Bitcask CLI");
         System.out.println("Available commands: get <key>, put <key> <value>");
 
-        File inputFile = new File("test/bitcaskTest1");
+        File inputFile = new File("test/notest");
 
         if (inputFile.exists() && inputFile.isFile()) {
             readFromFile(inputFile);
@@ -22,12 +22,11 @@ public class CLI {
     }
 
     private static void readFromFile(File inputFile) throws IOException, EntryNotFoundException {
-        System.out.println("Reading from " + inputFile.getPath());
         Scanner scanner = new Scanner(inputFile);
         while (scanner.hasNextLine()) {
             readOneCommand(scanner);
         }
-        System.out.println(inputFile.getPath() + " successfully read.");
+        System.out.println(inputFile.getPath() + " successfully read");
         scanner.close();
     }
 

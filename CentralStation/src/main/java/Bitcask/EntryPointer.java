@@ -2,6 +2,7 @@ package Bitcask;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Objects;
 
 public class EntryPointer {
     private long fileId;

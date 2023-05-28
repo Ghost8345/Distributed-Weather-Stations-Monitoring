@@ -24,25 +24,18 @@ public class Consumer {
 
         Buffer buffer = new Buffer();
         Bitcask bitcask = new Bitcask();
+         while (true) {
+            ConsumerRecords<Long, String> records = consumer.poll(Duration.ofMillis(100));
 
-        try {
-            while (true) {
-                ConsumerRecords<Long, String> records = consumer.poll(Duration.ofMillis(100));
-
-                for (ConsumerRecord<Long, String> record : records) {
-                    Long key = record.key();
-                    String value = record.value();
-                    System.out.println("Received message: Key = " + key + ", Value = " + value);
-                    buffer.add(value);
-                    bitcask.put(key.toString(), value.getBytes(StandardCharsets.UTF_8));
-                    String message = new String(bitcask.get(key.toString()));
-                    System.out.println("Bitcask: " + message);
-                }
+            for (ConsumerRecord<Long, String> record : records) {
+                Long key = record.key();
+                String value = record.value();
+                System.out.println("Received message: Key = " + key + ", Value = " + value);
+                buffer.add(value);
+                bitcask.put(key.toString(), value.getBytes(StandardCharsets.UTF_8));
+                String message = new String(bitcask.get(key.toString()));
+                System.out.println("Bitcask: " + message);
             }
-        } catch (EntryNotFoundException e) {
-            throw new RuntimeException(e);
-        } finally {
-            consumer.close();
         }
     }
 }

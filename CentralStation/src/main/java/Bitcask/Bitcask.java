@@ -1,9 +1,6 @@
 package Bitcask;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -20,36 +17,20 @@ public class Bitcask {
     private long activeFileId = 0;
     private int nonCompactedFiles = 0;
 
+
     public Bitcask() throws IOException {
         this.map = new HashMap<>();
         createDirectory();
 
         File hintFile = new File(HINT_PATH);
-        if (hintFile.exists())
+        if (hintFile.exists()) {
             recoverFromHint();
+            System.out.println("hint file successfully read");
+            recoverFromRecentlyActive();
+        }
         openNewFile();
         compactionThread = Executors.newSingleThreadExecutor();
     }
-
-    public void put(String key, byte[] value) throws IOException {
-        Entry entry = new Entry(key, value);
-        EntryPointer pointer = write(entry);
-
-        // obtain a lock on the map object
-        synchronized (map) {
-            map.put(key, pointer);
-        }
-    }
-
-    public byte[] get(String key) throws EntryNotFoundException, IOException {
-        if (!map.containsKey(key))
-            throw new EntryNotFoundException("No items with the given key");
-
-        EntryPointer pointer = map.get(key);
-        Entry entry = read(pointer);
-        return entry.getValue();
-    }
-
 
     private void recoverFromHint() throws IOException {
         RandomAccessFile hintFile = new RandomAccessFile(HINT_PATH,"r");
@@ -62,6 +43,63 @@ public class Bitcask {
             map.put(key,entryPointer);
         }
     }
+
+    private void recoverFromRecentlyActive() throws IOException {
+        File directory = new File("storage");
+        List<File> postCompactionFiles = Arrays.stream(Objects.requireNonNull(
+                        directory
+                .listFiles((file) -> !isHintFile(file))))
+                .sorted(Comparator.comparing(File::getName))
+                .collect(Collectors.collectingAndThen(Collectors.toList(), list -> {
+                    if (!list.isEmpty()) list.subList(0, 1).clear();
+                    return list;
+                }));
+        for (File file : postCompactionFiles) {
+            System.out.println("Reading " + file.getName());
+            RandomAccessFile f = new RandomAccessFile(file, "r");
+            while (f.getFilePointer() < f.length() - 1) {
+                long offset = f.getFilePointer();
+
+                Entry e = new Entry(f);
+                String key = e.getKey();
+
+                long id = Long.parseLong(file.getName());
+                int size = e.size();
+
+                EntryPointer entryPointer = new EntryPointer(id, offset, size);
+                map.put(key,entryPointer);
+            }
+            f.close();
+        }
+
+    }
+
+    public void put(String key, byte[] value) throws IOException {
+        Entry entry = new Entry(key, value);
+        EntryPointer pointer = write(entry);
+
+        // obtain a lock on the map object
+        synchronized (map) {
+            map.put(key, pointer);
+        }
+    }
+
+    public byte[] get(String key) throws  IOException {
+        try{
+            if (!map.containsKey(key))
+                throw new EntryNotFoundException("No items with the given key");
+
+            EntryPointer pointer = map.get(key);
+            Entry entry = read(pointer);
+            return entry.getValue();
+        }catch (EntryNotFoundException e){
+            System.out.println(e.getMessage());
+        }
+        return null;
+    }
+
+
+
 
     private void createDirectory() throws IOException {
         File directory = new File("storage");
@@ -89,14 +127,11 @@ public class Bitcask {
         if (activeFileId == compactionFileId)
             activeFileId++;
         activeFile = new RandomAccessFile(getFilePath(activeFileId), "rwd");
+        System.out.println(activeFileId + " created");
     }
 
     private String getFilePath(long fileId) {
         return "storage/" + fileId;
-    }
-
-    private String getFilePath(String fileName) {
-        return "storage/" + fileName;
     }
 
     public EntryPointer write(Entry entry) throws IOException {
@@ -125,7 +160,7 @@ public class Bitcask {
     }
 
     private void compact(long compactionFileId) {
-        System.out.println("Compaction Thread Up.");
+        System.out.println("Compaction Thread Up");
         compactionThread.execute(() -> {
             try {
                 long activeFileId = this.activeFileId;
@@ -157,8 +192,16 @@ public class Bitcask {
                 immutableFiles.forEach(file -> {
                     boolean deleted = file.delete();
                     if (!deleted)
-                        System.out.println("Couldn't delete file");
+                        try {
+                            throw new GarbageFileNotDeleted(file.getName());
+                        } catch (GarbageFileNotDeleted e) {
+                            e.printStackTrace();
+                        }
+                    else
+                        System.out.println(file.getName() + "deleted successfully");
                 });
+
+                System.out.println("Compaction done and hint file generated");
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -178,10 +221,10 @@ public class Bitcask {
         String compactFilePath = getFilePath(compactionFileId);
         RandomAccessFile compactFile = new RandomAccessFile(compactFilePath, "rwd");
 
-        // TODO: DELETE BEFORE WRITING
-        String hintFilePath = getFilePath("hint");
-        RandomAccessFile hintFile = new RandomAccessFile(hintFilePath, "rwd");
 
+        RandomAccessFile hintFile = new RandomAccessFile(HINT_PATH, "rwd");
+        //Clear hint file
+        hintFile.setLength(0);
         for (var compactPair : compactData.entrySet()) {
             String key = compactPair.getKey();
             Entry entry = compactPair.getValue().getEntry();
