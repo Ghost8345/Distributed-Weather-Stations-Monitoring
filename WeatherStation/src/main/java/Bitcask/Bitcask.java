@@ -18,11 +18,12 @@ public class Bitcask {
     private int nonCompactedFiles = 0;
 
     public Bitcask() throws IOException {
-//        File hintFile = new File(HINT_PATH);
-//        if (hintFile.exists())
-//            recoverFromHint();
         this.map = new HashMap<>();
         createDirectory();
+
+        File hintFile = new File(HINT_PATH);
+        if (hintFile.exists())
+            recoverFromHint();
         openNewFile();
         compactionThread = Executors.newSingleThreadExecutor();
     }
@@ -121,6 +122,7 @@ public class Bitcask {
     }
 
     private void compact(long compactionFileId) {
+        System.out.println("Compaction Thread Up.");
         compactionThread.execute(() -> {
             try {
                 long activeFileId = this.activeFileId;
@@ -134,7 +136,7 @@ public class Bitcask {
                 HashMap<String, CompactValueNode> compactData = new HashMap<>();
                 for (File file : immutableFiles) {
                     System.out.println("Reading " + file.getName());
-                    RandomAccessFile f = new RandomAccessFile(file, "r");
+                    RandomAccessFile f = new RandomAccessFile(file, "rwd");
                     while (f.getFilePointer() < f.length() - 1) {
                         long offset = f.getFilePointer();
                         long id = Long.parseLong(file.getName());
@@ -142,13 +144,18 @@ public class Bitcask {
                         EntryPointer ep = new EntryPointer(id, offset, e.size());
                         compactData.put(e.getKey(), new CompactValueNode(e, ep));
                     }
+                    f.close();
                 }
 
                 // Write compacted file
                 writeCompactionData(compactData, compactionFileId);
 
                 // Delete garbage files
-                immutableFiles.forEach(file -> file.delete());
+                immutableFiles.forEach(file -> {
+                    boolean deleted = file.delete();
+                    if (!deleted)
+                        System.out.println("Couldn't delete file");
+                });
 
             } catch (IOException e) {
                 e.printStackTrace();
