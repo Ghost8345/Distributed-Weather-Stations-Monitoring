@@ -10,11 +10,8 @@ public class CLI {
     public static void main(String[] args) throws IOException, EntryNotFoundException {
         bitcask = new Bitcask();
 
-        Scanner scanner = null;
-
         System.out.println("Bitcask CLI");
         System.out.println("Available commands: get <key>, put <key> <value>");
-
 
         File inputFile = new File("test/bitcaskTest1");
 
