@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Storage {
-    private final static int MAX_FILE_BYTES = 50;
+    private final static int MAX_FILE_BYTES = 300;
     private final static int COMPACTION_FILE_LIMIT = 2;
     private final static int COMPACT_FILE_ID = 0;
     private RandomAccessFile activeFile = null;
@@ -72,20 +72,17 @@ public class Storage {
         compactionThread.execute(() -> {
             try {
                 long filesCount = fileId;
-                HashMap<String, CompactValueNode> compactData = new HashMap<>();
+                HashMap<String, Entry> compactData = new HashMap<>();
                 File compactFile = new File(getFilePath(COMPACT_FILE_ID));
                 int currentId = compactFile.exists() ? 0 : 1;
                 while (currentId <= filesCount) {
                     String filePath = getFilePath(currentId++);
                     RandomAccessFile file = new RandomAccessFile(filePath, "r");
+                    System.out.println(filePath);
+
                     while (file.getFilePointer() < file.length()) {
-                        Entry e = new Entry(file);
-                        EntryPointer ep = new EntryPointer(COMPACT_FILE_ID, -1, e.size());
-                        if (compactData.containsKey(e.getKey())) {
-                            compactData.replace(e.getKey(), new CompactValueNode(e, ep));
-                        } else {
-                            compactData.put(e.getKey(), new CompactValueNode(e, ep));
-                        }
+                        Entry entry = new Entry(file);
+                        compactData.put(entry.getKey(), entry);
                     }
                 }
                 writeCompactionData(compactData);
@@ -96,21 +93,22 @@ public class Storage {
     }
 
 
-    private void writeCompactionData(HashMap<String,CompactValueNode> compactData) throws IOException {
+    private void writeCompactionData(HashMap<String,Entry> compactData) throws IOException {
         String compactFilePath = getFilePath(COMPACT_FILE_ID);
         RandomAccessFile compactFile = new RandomAccessFile(compactFilePath, "rwd");
 
         String hintFilePath = getFilePath("hint");
         RandomAccessFile hintFile = new RandomAccessFile(hintFilePath, "rwd");
 
-        for (Map.Entry<String, CompactValueNode> compactPair : compactData.entrySet()) {
+        for (Map.Entry<String, Entry> compactPair : compactData.entrySet()) {
             String key = compactPair.getKey();
-            CompactValueNode value = compactPair.getValue();
-            EntryPointer entryPointer = value.getEntryPointer();
-            entryPointer.setOffset(compactFile.getFilePointer());
+            Entry entry = compactPair.getValue();
 
-            value.getEntry().writeExternal(compactFile);
+            long offset = compactFile.getFilePointer();
+            int size = entry.size();
+            EntryPointer entryPointer = new EntryPointer(COMPACT_FILE_ID, offset, size);
 
+            entry.writeExternal(compactFile);
             writeHintEntry(key,entryPointer,hintFile);
         }
 
