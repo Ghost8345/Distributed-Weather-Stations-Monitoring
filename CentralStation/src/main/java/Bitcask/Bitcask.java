@@ -18,7 +18,6 @@ public class Bitcask {
     private long activeFileId = 0;
     private int nonCompactedFiles = 0;
 
-
     public Bitcask() throws IOException {
         this.map = new HashMap<>();
         createDirectory();
@@ -35,7 +34,7 @@ public class Bitcask {
 
     private void recoverFromHint() throws IOException {
         RandomAccessFile hintFile = new RandomAccessFile(HINT_PATH,"r");
-        while (hintFile.getFilePointer() < hintFile.length()){
+        while (hintFile.getFilePointer() < hintFile.length() - 1 && hintFile.length() - hintFile.getFilePointer() >= 25){
             int keySize = hintFile.readInt();
             byte[] keyBytes = new byte[keySize];
             hintFile.read(keyBytes);
@@ -221,7 +220,7 @@ public class Bitcask {
 
         RandomAccessFile hintFile = new RandomAccessFile(HINT_PATH, "rwd");
         //Clear hint file
-        hintFile.setLength(0);
+//        hintFile.setLength(0);
         for (var compactPair : compactData.entrySet()) {
             String key = compactPair.getKey();
             Entry entry = compactPair.getValue().getEntry();

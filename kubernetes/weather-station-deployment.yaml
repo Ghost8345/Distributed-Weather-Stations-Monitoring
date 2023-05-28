@@ -15,6 +15,10 @@ spec:
         app: weather-station
     spec:
       containers:
+      - name: weather-station-0
+        image: weather-station
+        imagePullPolicy: Never
+        args: ["0"]
       - name: weather-station-1
         image: weather-station
         imagePullPolicy: Never
@@ -51,7 +55,3 @@ spec:
       #   image: weather-station
       #   imagePullPolicy: Never
       #   args: ["9"]
-      # - name: weather-station-10
-      #   image: weather-station
-      #   imagePullPolicy: Never
-      #   args: ["10"]

@@ -20,13 +20,19 @@ public class Consumer {
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
 
         KafkaConsumer<Long, String> consumer = new KafkaConsumer<>(properties);
+        KafkaConsumer<Long, String> humidityConsumer = new KafkaConsumer<>(properties);
         consumer.subscribe(Collections.singletonList("station-health-check"));
+        humidityConsumer.subscribe(Collections.singletonList("high-humidity"));
 
         Buffer buffer = new Buffer();
         Bitcask bitcask = new Bitcask();
 
         while (true) {
             ConsumerRecords<Long, String> records = consumer.poll(Duration.ofMillis(100));
+            ConsumerRecords<Long, String> humidityRecords = humidityConsumer.poll(Duration.ofMillis(100));
+
+            for (ConsumerRecord<Long, String> record: humidityRecords)
+                System.out.println("It's raining");
 
             for (ConsumerRecord<Long, String> record : records) {
                 Long key = record.key();
