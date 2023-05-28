@@ -23,7 +23,8 @@ import java.util.List;
 
 public class ParquetHandler {
     static int counter = 0;
-    public  void parquetTransform(JSONArray weatherEntries, String path) throws IOException, JSONException {
+
+    public void write(JSONArray weatherEntries, String path) throws IOException, JSONException {
         createFolder(path + "/outputs");
         counter++;
 
@@ -72,7 +73,7 @@ public class ParquetHandler {
         f.mkdir();
     }
 
-    private   GenericData.Record createParquet(JSONObject jsonObject, Schema schema) throws JSONException {
+    private GenericData.Record createParquet(JSONObject jsonObject, Schema schema) throws JSONException {
         GenericData.Record temp = new GenericData.Record(schema);
 
         temp.put("station_id", jsonObject.get("station_id"));
