@@ -22,12 +22,11 @@ public class CLI {
     }
 
     private static void readFromFile(File inputFile) throws IOException, EntryNotFoundException {
-        System.out.println("Reading from " + inputFile.getPath());
         Scanner scanner = new Scanner(inputFile);
         while (scanner.hasNextLine()) {
             readOneCommand(scanner);
         }
-        System.out.println(inputFile.getPath() + " successfully read.");
+        System.out.println(inputFile.getPath() + " successfully read");
         scanner.close();
     }
 

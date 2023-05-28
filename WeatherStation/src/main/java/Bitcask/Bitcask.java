@@ -25,6 +25,7 @@ public class Bitcask {
         File hintFile = new File(HINT_PATH);
         if (hintFile.exists()) {
             recoverFromHint();
+            System.out.println("hint file successfully read");
             recoverFromRecentlyActive();
         }
         openNewFile();
@@ -32,7 +33,6 @@ public class Bitcask {
     }
 
     private void recoverFromHint() throws IOException {
-        System.out.println("Reading hint file");
         RandomAccessFile hintFile = new RandomAccessFile(HINT_PATH,"r");
         while (hintFile.getFilePointer() < hintFile.length()){
             int keySize = hintFile.readInt();
@@ -127,6 +127,7 @@ public class Bitcask {
         if (activeFileId == compactionFileId)
             activeFileId++;
         activeFile = new RandomAccessFile(getFilePath(activeFileId), "rwd");
+        System.out.println(activeFileId + " created");
     }
 
     private String getFilePath(long fileId) {
@@ -191,8 +192,16 @@ public class Bitcask {
                 immutableFiles.forEach(file -> {
                     boolean deleted = file.delete();
                     if (!deleted)
-                        System.out.println("Couldn't delete file");
+                        try {
+                            throw new GarbageFileNotDeleted(file.getName());
+                        } catch (GarbageFileNotDeleted e) {
+                            e.printStackTrace();
+                        }
+                    else
+                        System.out.println(file.getName() + "deleted successfully");
                 });
+
+                System.out.println("Compaction done and hint file generated");
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -216,7 +225,6 @@ public class Bitcask {
         RandomAccessFile hintFile = new RandomAccessFile(HINT_PATH, "rwd");
         //Clear hint file
         hintFile.setLength(0);
-
         for (var compactPair : compactData.entrySet()) {
             String key = compactPair.getKey();
             Entry entry = compactPair.getValue().getEntry();
