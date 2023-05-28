@@ -13,7 +13,7 @@ public class CLI {
         System.out.println("Bitcask CLI");
         System.out.println("Available commands: get <key>, put <key> <value>");
 
-        File inputFile = new File("test/bitcaskTest1");
+        File inputFile = new File("test/notest");
 
         if (inputFile.exists() && inputFile.isFile()) {
             readFromFile(inputFile);
